@@ -54,7 +54,7 @@ def process_parameters_with_prefix(param_prefix, cred_path, aws_region, aws_acce
             if not existing_file_sha256_hash:
                 logging.info('This is a new credentials file: "%s"' % filename)
             else:
-                logging.info("Contents don't match - replacing existing file contents with value from parameter store")
+                logging.info("Contents don't match - replacing \"%s\" contents with value from parameter store" % full_cred_path)
             if not dryrun:
                 if os.path.exists(new_file_full_path) and os.stat(new_file_full_path).st_size > 0:
                     shutil.copyfile(new_file_full_path, full_cred_path)
