@@ -6,6 +6,11 @@ if [ "$VERBOSE" ]; then
     VERBOSE='--verbose'
 fi
 
+if [ "$UMASK" ]; then
+    echo "setting given UMASK - all files and folders created will use a umask value of $UMASK"
+    umask $UMASK
+fi
+
 CRED_FOLDER_PATH=/credentials
 
 # Check for required ENV Variables

@@ -4,6 +4,7 @@ Keep file contents in sync with matching parameters in AWS Parameter Store
 ## Variables
 
 - VERBOSE - enable more logging if set to 1
+- UMASK - optional UMASK value to use for files created
 - FREQUENCY - How often to check for changes (in seconds). Default is 300 seconds (5 minutes).
 - AWS_ACCESS_KEY_ID - The AWS Access Key Id value
 - AWS_SECRET_ACCESS_KEY - The AWS Secret Access Key value
