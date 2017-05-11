@@ -6,6 +6,8 @@ if [ "$VERBOSE" ]; then
     VERBOSE='--verbose'
 fi
 
+CRED_FOLDER_PATH=/credentials
+
 # Check for required ENV Variables
 if [ -z "$PARAM_PREFIX" ]; then
     echo "Must supply a parameter prefix by setting the PARAM_PREFIX environment variable"
@@ -35,21 +37,6 @@ if [ -z "$FREQUENCY" ]; then
     FREQUENCY=300
 else
     echo "Frequency set to $FREQUENCY seconds"
-fi
-
-if [ -z "$CRED_FOLDER_PATH" ]; then
-    CRED_FOLDER_PATH=/credentials
-    echo "CRED_FOLDER_PATH environment variable missing - assuming default of ${CRED_FOLDER_PATH}"
-fi
-
-if [ ! -e "$CRED_FOLDER_PATH" ]; then
-    echo "${CRED_FOLDER_PATH} doesn't exist, will attempt to create it"
-    echo "NOTE: If this was not expected - please mount credentials path at ${CRED_FOLDER_PATH}"
-    mkdir -p ${CRED_FOLDER_PATH}
-    if [ "$?" -ne 0 ]; then
-        echo "Unable to create ${CRED_FOLDER_PATH} - exiting..."
-        exit 1
-    fi
 fi
 
 # Loop forever, sleeping for our frequency
