@@ -70,34 +70,22 @@ def process_parameters_with_prefix(param_prefix, cred_path, aws_region, aws_acce
             logging.debug('Removing %s' % new_file_full_path)
             os.remove(new_file_full_path)
 
-    def get_parameters_with_prefix(prefix):
-        parameter_names_list = []
-        result = ssm.describe_parameters(Filters=[{'Key': 'Name', 'Values': [param_prefix]}], MaxResults=50)
-        if result:
-            if 'ResponseMetadata' in result:
-                if 'HTTPStatusCode' in result['ResponseMetadata']:
-                    if result['ResponseMetadata']['HTTPStatusCode'] == 200:
-                        if 'Parameters' in result:
-                            for param in result['Parameters']:
-                                logging.debug('Found parameter "%s" - adding to list' % param['Name'])
-                                parameter_names_list.append(param['Name'])
-        next_token = None
-        if 'NextToken' in result:
-            next_token = result['NextToken']
-        while next_token:
-            result = ssm.describe_parameters(Filters=[{'Key': 'Name', 'Values': [param_prefix]}], MaxResults=50)
-            if result:
-                if 'ResponseMetadata' in result:
-                    if 'HTTPStatusCode' in result['ResponseMetadata']:
-                        if result['ResponseMetadata']['HTTPStatusCode'] == 200:
-                            if 'Parameters' in result:
-                                for param in result['Parameters']:
-                                    logging.debug('Found parameter "%s" - adding to list' % param['Name'])
-                                    parameter_names_list.append(param['Name'])
-            next_token = None
-            if 'NextToken' in result:
-                next_token = result['NextToken']
-        return parameter_names_list
+    def get_parameters_with_prefix(prefix, next_token=None):
+        parameter_list = []
+        if next_token:
+            query_result = ssm.describe_parameters(Filters=[{'Key': 'Name', 'Values': [prefix]}], NextToken=next_token)
+        else:
+            query_result = ssm.describe_parameters(Filters=[{'Key': 'Name', 'Values': [prefix]}])
+
+        if 'ResponseMetadata' in query_result:
+            if 'HTTPStatusCode' in query_result['ResponseMetadata']:
+                if query_result['ResponseMetadata']['HTTPStatusCode'] == 200:
+                    if 'NextToken' in query_result:
+                        parameter_list.extend(get_parameters_with_prefix(prefix, next_token=query_result['NextToken']))
+                    else:
+                        parameter_list.extend(query_result['Parameters'])
+        return parameter_list
+
 
     # If aws_access_key and aws_secret_key provided, use those
     if aws_access_key and aws_secret_key:
@@ -109,7 +97,10 @@ def process_parameters_with_prefix(param_prefix, cred_path, aws_region, aws_acce
 
     ssm = session.client('ssm')
 
-    parameter_names_list = get_parameters_with_prefix(param_prefix)
+    parameters_list = get_parameters_with_prefix(param_prefix, next_token=None)
+    parameter_names_list = []
+    for param in parameters_list:
+        parameter_names_list.append(param['Name'])
 
     if parameter_names_list:
         # Make sure we have a temp dir to work with

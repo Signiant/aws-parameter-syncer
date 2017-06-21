@@ -32,8 +32,8 @@ folder 'credentials-dir' which is mounted into the container at '/credentials'.
 ````
 docker run -d -e "FREQUENCY=600" \
  -e "VERBOSE=1" \
- -e "AWS_ACCESS_KEY_ID=MY_ACCESS_KEY_ID \
- -e "AWS_SECRET_ACCESS_KEY=MY_SECRET_KEY \
+ -e "AWS_ACCESS_KEY_ID=MY_ACCESS_KEY_ID" \
+ -e "AWS_SECRET_ACCESS_KEY=MY_SECRET_KEY" \
  -e "PARAM_PREFIX=TESTING_" \
  -v credentials-dir:/credentials \
  signiant/aws-parameter-syncer
@@ -48,8 +48,8 @@ desired.
 
 ````
 docker run -d -e "FREQUENCY=120" \
- -e "AWS_ACCESS_KEY_ID=MY_ACCESS_KEY_ID \
- -e "AWS_SECRET_ACCESS_KEY=MY_SECRET_KEY \
+ -e "AWS_ACCESS_KEY_ID=MY_ACCESS_KEY_ID" \
+ -e "AWS_SECRET_ACCESS_KEY=MY_SECRET_KEY" \
  -e "AWS_REGION=us-west-2"
  -e "PARAM_PREFIX=TESTING_" \
  signiant/aws-parameter-syncer
