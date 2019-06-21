@@ -87,6 +87,9 @@ def process_parameters_with_prefix(param_prefix, cred_path, aws_region, aws_acce
                         logging.debug("Next token found")
                         parameter_list.extend(get_parameters_with_prefix(prefix, next_token=query_result['NextToken']))
                         logging.debug("Out of recursion")
+                    else:
+                        logging.debug("No next token, storing")
+                        parameter_list.extend(query_result['Parameters'])
         logging.debug("Parameter List %s" % parameter_list)
         return parameter_list
 
