@@ -76,14 +76,18 @@ def process_parameters_with_prefix(param_prefix, cred_path, aws_region, aws_acce
             query_result = ssm.describe_parameters(Filters=[{'Key': 'Name', 'Values': [prefix]}], NextToken=next_token)
         else:
             query_result = ssm.describe_parameters(Filters=[{'Key': 'Name', 'Values': [prefix]}])
-
+        logging.debug("Query result %s" % str(query_result))
         if 'ResponseMetadata' in query_result:
             if 'HTTPStatusCode' in query_result['ResponseMetadata']:
                 if query_result['ResponseMetadata']['HTTPStatusCode'] == 200:
-                    if 'NextToken' in query_result:
-                        parameter_list.extend(get_parameters_with_prefix(prefix, next_token=query_result['NextToken']))
-                    else:
+                    if next_token is None:
+                        #grab the parameter list on the first run or you'll lose it
                         parameter_list.extend(query_result['Parameters'])
+                    if 'NextToken' in query_result:
+                        logging.debug("Next token found")
+                        parameter_list.extend(get_parameters_with_prefix(prefix, next_token=query_result['NextToken']))
+                        logging.debug("Out of recursion")
+        logging.debug("Parameter List %s" % parameter_list)
         return parameter_list
 
 
