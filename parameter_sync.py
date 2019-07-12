@@ -95,7 +95,7 @@ def process_parameters_with_prefix(param_prefix, cred_path, aws_region, aws_acce
 
 
     # If aws_access_key and aws_secret_key provided, use those
-    if aws_access_key and aws_secret_key:
+    if aws_access_key != "PROFILE":
         session = boto3.session.Session(aws_access_key_id=aws_access_key,
                                         aws_secret_access_key=aws_secret_key,
                                         region_name=aws_region)
