@@ -95,12 +95,12 @@ def process_parameters_with_prefix(param_prefix, cred_path, aws_region, aws_acce
 
 
     # If aws_access_key and aws_secret_key provided, use those
-    if aws_access_key != "PROFILE":
+    if aws_access_key is None:
+        session = boto3.session.Session(region_name=aws_region)
+    else:
         session = boto3.session.Session(aws_access_key_id=aws_access_key,
                                         aws_secret_access_key=aws_secret_key,
                                         region_name=aws_region)
-    else:
-        session = boto3.session.Session(region_name=aws_region)
 
     ssm = session.client('ssm')
 
@@ -167,15 +167,19 @@ if __name__ == "__main__":
     # logger.addHandler(fh)
     logger.addHandler(ch)
 
-    if not os.environ.get('AWS_ACCESS_KEY_ID') and not args.aws_access_key:
-        logging.critical('AWS Access Key Id not set - cannot continue')
+    if args.aws_access_key:
+        aws_access_key = args.aws_access_key
+    else:
+        aws_access_key = None
 
-    if not os.environ.get('AWS_SECRET_ACCESS_KEY') and not args.aws_secret_key:
-        logging.critical('AWS Secret Access Key not set - cannot continue')
+    if args.aws_secret_key:
+        aws_secret_key = args.aws_secret_key
+    else:
+        aws_secret_key = None
 
     logging.debug('INIT')
     logging.info('Getting parameters with prefix %s from AWS Parameter Store' % args.param_prefix)
     logging.info('Parameter values will be compared against file contents in "%s" and updated if necessary' % args.cred_path)
     process_parameters_with_prefix(args.param_prefix, args.cred_path, args.aws_region,
-                                   args.aws_access_key, args.aws_secret_key, args.dryrun)
+                                   aws_access_key, aws_secret_key, args.dryrun)
     logging.info('COMPLETE')

@@ -21,16 +21,6 @@ else
     echo "Parameter Prefix set to $PARAM_PREFIX"
 fi
 
-if [ -z "$AWS_ACCESS_KEY_ID" ]; then
-    echo "Must supply an AWS Access Key ID by setting the AWS_ACCESS_KEY_ID environment variable"
-    exit 1
-fi
-
-if [ -z "$AWS_SECRET_ACCESS_KEY" ]; then
-    echo "Must supply an AWS Secret Access Key by setting the AWS_SECRET_ACCESS_KEY environment variable"
-    exit 1
-fi
-
 if [ -z "$AWS_REGION" ]; then
     echo "AWS_REGION not set - defaulting to us-east-1"
     AWS_REGION='us-east-1'
