@@ -32,13 +32,13 @@ def process_parameters_with_prefix(param_prefix, cred_path, aws_region, aws_acce
         parameter_list = []
         if parameter_names_list:
             for parameter_name in parameter_names_list:
-                result = ssm.get_parameters(Names=[parameter_name], WithDecryption=True)
+                result = ssm.get_parameter(Name=parameter_name, WithDecryption=True)
                 if result:
                     if 'ResponseMetadata' in result:
                         if 'HTTPStatusCode' in result['ResponseMetadata']:
                             if result['ResponseMetadata']['HTTPStatusCode'] == 200:
-                                if 'Parameters' in result:
-                                    parameter_list = parameter_list + result['Parameters']
+                                if 'Parameter' in result:
+                                    parameter_list.append(result['Parameter'])
         return parameter_list
 
     def process_parameter(param_name, param_value):
