@@ -1,12 +1,14 @@
-import logging, logging.handlers
 import argparse
-import os
-import boto3
 import hashlib
-import tempfile
+import logging
+import logging.handlers
+import os
 import shutil
+import tempfile
+import boto3
 
 logging.getLogger("botocore").setLevel(logging.CRITICAL)
+
 
 def get_sha256_hash(file_path):
     logging.debug('Hashing "%s" using SHA256' % file_path)
@@ -29,13 +31,14 @@ def process_parameters_with_prefix(param_prefix, cred_path, aws_region, aws_acce
     def get_parameters(parameter_names_list):
         parameter_list = []
         if parameter_names_list:
-            result = ssm.get_parameters(Names=parameter_names_list, WithDecryption=True)
-            if result:
-                if 'ResponseMetadata' in result:
-                    if 'HTTPStatusCode' in result['ResponseMetadata']:
-                        if result['ResponseMetadata']['HTTPStatusCode'] == 200:
-                            if 'Parameters' in result:
-                                parameter_list = result['Parameters']
+            for parameter_name in parameter_names_list:
+                result = ssm.get_parameter(Name=parameter_name, WithDecryption=True)
+                if result:
+                    if 'ResponseMetadata' in result:
+                        if 'HTTPStatusCode' in result['ResponseMetadata']:
+                            if result['ResponseMetadata']['HTTPStatusCode'] == 200:
+                                if 'Parameter' in result:
+                                    parameter_list.append(result['Parameter'])
         return parameter_list
 
     def process_parameter(param_name, param_value):
@@ -47,7 +50,7 @@ def process_parameters_with_prefix(param_prefix, cred_path, aws_region, aws_acce
         new_file_full_path = temp_dir + os.sep + filename + '.new'
         logging.debug('Storing retrieved value for parameter "%s" in "%s"' % (param_name, new_file_full_path))
         with open(new_file_full_path, 'w') as f:
-            f.write(param_value.replace('\\n', '\n'))
+            f.write(param_value)
         new_file_sha256_hash = get_sha256_hash(new_file_full_path)
         logging.debug('Comparing file hashes')
         if existing_file_sha256_hash != new_file_sha256_hash:

@@ -1,4 +1,4 @@
-FROM jfloff/alpine-python:2.7-slim
+FROM python:3.8-slim
 
 MAINTAINER Signiant DevOps <devops@signiant.com>
 
