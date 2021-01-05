@@ -1,17 +1,22 @@
 import argparse
 import hashlib
 import logging
-import logging.handlers
 import os
 import shutil
 import tempfile
 import boto3
+import sys
 
-logging.getLogger("botocore").setLevel(logging.CRITICAL)
+#setup logging
+FORMAT = '%(asctime)-15s [%(levelname)s] %(message)s'
+logging.basicConfig(format=FORMAT, stream=sys.stdout, level=logging.INFO)
+logging.getLogger('boto3').setLevel(logging.CRITICAL)
+logging.getLogger('botocore').setLevel(logging.CRITICAL)
+logger = logging.getLogger(__name__)
 
 
 def get_sha256_hash(file_path):
-    logging.debug('Hashing "%s" using SHA256' % file_path)
+    logger.debug('Hashing "%s" using SHA256' % file_path)
     BUF_SIZE = 65536  # lets read stuff in 64kb chunks!
     sha256 = hashlib.sha256()
     with open(file_path, 'rb') as f:
@@ -21,12 +26,12 @@ def get_sha256_hash(file_path):
                 break
             sha256.update(data)
 
-    logging.debug('   SHA256 hash: {0}'.format(sha256.hexdigest()))
+    logger.debug('   SHA256 hash: {0}'.format(sha256.hexdigest()))
     return sha256.digest()
 
 
 def process_parameters_with_prefix(param_prefix, cred_path, aws_region, aws_access_key=None, aws_secret_key=None, dryrun=False):
-    logging.debug('Searching for parameters with a prefix of %s' % param_prefix)
+    logger.debug('Searching for parameters with a prefix of %s' % param_prefix)
 
     def get_parameters(parameter_names_list):
         parameter_list = []
@@ -48,29 +53,29 @@ def process_parameters_with_prefix(param_prefix, cred_path, aws_region, aws_acce
         if os.path.exists(full_cred_path):
             existing_file_sha256_hash = get_sha256_hash(full_cred_path)
         new_file_full_path = temp_dir + os.sep + filename + '.new'
-        logging.debug('Storing retrieved value for parameter "%s" in "%s"' % (param_name, new_file_full_path))
+        logger.debug('Storing retrieved value for parameter "%s" in "%s"' % (param_name, new_file_full_path))
         with open(new_file_full_path, 'w') as f:
             f.write(param_value)
         new_file_sha256_hash = get_sha256_hash(new_file_full_path)
-        logging.debug('Comparing file hashes')
+        logger.debug('Comparing file hashes')
         if existing_file_sha256_hash != new_file_sha256_hash:
             if not existing_file_sha256_hash:
-                logging.info('This is a new credentials file: "%s"' % filename)
+                logger.info('This is a new credentials file: "%s"' % filename)
             else:
-                logging.info("Contents don't match - replacing \"%s\" contents with value from parameter store" % full_cred_path)
+                logger.info("Contents don't match - replacing \"%s\" contents with value from parameter store" % full_cred_path)
             if not dryrun:
                 if os.path.exists(new_file_full_path) and os.stat(new_file_full_path).st_size > 0:
                     shutil.copyfile(new_file_full_path, full_cred_path)
                 else:
-                    logging.error('file %s is missing or zero length - NOT replacing' % new_file_full_path)
+                    logger.error('file %s is missing or zero length - NOT replacing' % new_file_full_path)
             else:
-                logging.info('*** Dryrun selected - will NOT update "%s"' % full_cred_path)
+                logger.info('*** Dryrun selected - will NOT update "%s"' % full_cred_path)
         else:
-            logging.info('Contents of existing "%s" MATCH with value for "%s" from parameter store' % (full_cred_path, param_name))
+            logger.info('Contents of existing "%s" MATCH with value for "%s" from parameter store' % (full_cred_path, param_name))
 
         # Cleanup
         if new_file_full_path:
-            logging.debug('Removing %s' % new_file_full_path)
+            logger.debug('Removing %s' % new_file_full_path)
             os.remove(new_file_full_path)
 
     def get_parameters_with_prefix(prefix, next_token=None):
@@ -79,7 +84,7 @@ def process_parameters_with_prefix(param_prefix, cred_path, aws_region, aws_acce
             query_result = ssm.describe_parameters(Filters=[{'Key': 'Name', 'Values': [prefix]}], NextToken=next_token)
         else:
             query_result = ssm.describe_parameters(Filters=[{'Key': 'Name', 'Values': [prefix]}])
-        logging.debug("Query result %s" % str(query_result))
+        logger.debug("Query result %s" % str(query_result))
         if 'ResponseMetadata' in query_result:
             if 'HTTPStatusCode' in query_result['ResponseMetadata']:
                 if query_result['ResponseMetadata']['HTTPStatusCode'] == 200:
@@ -87,13 +92,14 @@ def process_parameters_with_prefix(param_prefix, cred_path, aws_region, aws_acce
                         #grab the parameter list on the first run or you'll lose it
                         parameter_list.extend(query_result['Parameters'])
                     if 'NextToken' in query_result:
-                        logging.debug("Next token found")
+                        logger.debug("Next token found")
                         parameter_list.extend(get_parameters_with_prefix(prefix, next_token=query_result['NextToken']))
-                        logging.debug("Out of recursion")
-                    else:
-                        logging.debug("No next token, storing")
                         parameter_list.extend(query_result['Parameters'])
-        logging.debug("Parameter List %s" % parameter_list)
+                        logger.debug("Out of recursion")
+                    else:
+                        logger.debug("No next token, storing")
+                        parameter_list.extend(query_result['Parameters'])
+        logger.debug("Parameter List %s" % parameter_list)
         return parameter_list
 
 
@@ -126,8 +132,6 @@ def process_parameters_with_prefix(param_prefix, cred_path, aws_region, aws_acce
 
 if __name__ == "__main__":
 
-    LOG_FILENAME = 'parameter-sync.log'
-
     description =  "Script to get all parameters from AWS Parameter\n"
     description += "Store with a prefix that matches the given prefix\n\n"
     description += "Note: The following environment variables can be set prior to execution\n"
@@ -148,37 +152,19 @@ if __name__ == "__main__":
                         required=False)
     args = parser.parse_args()
 
-    log_level = logging.INFO
-
     if args.verbose:
-        print('Verbose logging selected')
-        log_level = logging.DEBUG
-
-    logger = logging.getLogger()
-    logger.setLevel(logging.DEBUG)
-    # # create file handler which logs even debug messages
-    # fh = logging.handlers.RotatingFileHandler(LOG_FILENAME, maxBytes=5242880, backupCount=5)
-    # fh.setLevel(logging.DEBUG)
-    # create console handler using level set in log_level
-    ch = logging.StreamHandler()
-    ch.setLevel(log_level)
-    console_formatter = logging.Formatter('%(levelname)8s: %(message)s')
-    ch.setFormatter(console_formatter)
-    # file_formatter = logging.Formatter('%(asctime)s - %(levelname)8s: %(message)s')
-    # fh.setFormatter(file_formatter)
-    # Add the handlers to the logger
-    # logger.addHandler(fh)
-    logger.addHandler(ch)
+        print('Verbose logger selected')
+        logger.setLevel(logging.DEBUG)
 
     if not os.environ.get('AWS_ACCESS_KEY_ID') and not args.aws_access_key:
-        logging.critical('AWS Access Key Id not set - cannot continue')
+        logger.critical('AWS Access Key Id not set - cannot continue')
 
     if not os.environ.get('AWS_SECRET_ACCESS_KEY') and not args.aws_secret_key:
-        logging.critical('AWS Secret Access Key not set - cannot continue')
+        logger.critical('AWS Secret Access Key not set - cannot continue')
 
-    logging.debug('INIT')
-    logging.info('Getting parameters with prefix %s from AWS Parameter Store' % args.param_prefix)
-    logging.info('Parameter values will be compared against file contents in "%s" and updated if necessary' % args.cred_path)
+    logger.debug('INIT')
+    logger.info('Getting parameters with prefix %s from AWS Parameter Store' % args.param_prefix)
+    logger.info('Parameter values will be compared against file contents in "%s" and updated if necessary' % args.cred_path)
     process_parameters_with_prefix(args.param_prefix, args.cred_path, args.aws_region,
                                    args.aws_access_key, args.aws_secret_key, args.dryrun)
-    logging.info('COMPLETE')
+    logger.info('COMPLETE')
