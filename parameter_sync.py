@@ -53,7 +53,7 @@ def process_parameters_with_prefix(param_prefix, cred_path, aws_region, aws_acce
         if os.path.exists(full_cred_path):
             existing_file_sha256_hash = get_sha256_hash(full_cred_path)
         new_file_full_path = temp_dir + os.sep + filename + '.new'
-        logger.debug('Storing retrieved value for parameter "%s" in "%s"' % (param_name, new_file_full_path))
+        logger.info('Storing retrieved value for parameter "%s" in "%s"' % (param_name, new_file_full_path))
         with open(new_file_full_path, 'w') as f:
             f.write(param_value)
         new_file_sha256_hash = get_sha256_hash(new_file_full_path)
