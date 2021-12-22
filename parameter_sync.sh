@@ -11,7 +11,12 @@ if [ "$UMASK" ]; then
     umask $UMASK
 fi
 
-CRED_FOLDER_PATH=/credentials
+
+
+# Check for required ENV Variables
+if [ -z "$CRED_FOLDER_PATH" ]; then
+    CRED_FOLDER_PATH=/credentials
+fi
 
 # Check for required ENV Variables
 if [ -z "$PARAM_PREFIX" ]; then
