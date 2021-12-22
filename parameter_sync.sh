@@ -11,9 +11,12 @@ if [ "$UMASK" ]; then
     umask $UMASK
 fi
 
-CRED_FOLDER_PATH=/credentials
-
 # Check for required ENV Variables
+
+if [ -z "$CRED_FOLDER_PATH" ]; then
+    CRED_FOLDER_PATH=/credentials
+fi
+
 if [ -z "$PARAM_PREFIX" ]; then
     echo "Must supply a parameter prefix by setting the PARAM_PREFIX environment variable"
     exit 1
