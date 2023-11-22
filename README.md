@@ -15,6 +15,9 @@ Keep file contents in sync with matching parameters in AWS Parameter Store
         - export PARAM_PREFIX=TESTING_
         - TESTING_param1.txt will be compared against param1.txt
         - TESTING_param2.conf will be compared against param2.conf
+- SAVE_AWS_CREDS - List of tuples (filename, profile name) to save AWS Credentials to (saved to credentials dir)
+    - value should be space separated list, e.g. aws_cli_credentials default aws_boto_credentials prod
+    - if a space is required in the profile name, e.g. profile prod, substitute # for a space, e.g. profile#prod
 
 The docker container exposes /credentials as a volume - this can be shared with other
 containers or mounted to the local file system
@@ -26,7 +29,9 @@ containers or mounted to the local file system
 This example checks AWS Parameter Store in the default us-east-1 region every 600 seconds (10 minutes)
 for parameters containing 'TESTING_'. The credentials in AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are
 used to access the AWS Parameter Store. The parameter values will be checked against files in the local
-folder 'credentials-dir' which is mounted into the container at '/credentials'.
+folder 'credentials-dir' which is mounted into the container at '/credentials'. The credentials used to access
+the AWS Parameter Store will be saved to /credentials/aws_cli_credentials file with a profile name of 'default'
+and no (default) region specified.
 
 
 ````
@@ -35,6 +40,7 @@ docker run -d -e "FREQUENCY=600" \
  -e "AWS_ACCESS_KEY_ID=MY_ACCESS_KEY_ID" \
  -e "AWS_SECRET_ACCESS_KEY=MY_SECRET_KEY" \
  -e "PARAM_PREFIX=TESTING_" \
+ -e "SAVE_AWS_CREDS="aws_cli_credentials default None" \
  -v credentials-dir:/credentials \
  signiant/aws-parameter-syncer
 ````

@@ -44,12 +44,17 @@ else
     echo "Frequency set to $FREQUENCY seconds"
 fi
 
+if [ "$SAVE_AWS_CREDS" ]; then
+    echo "Save AWS Creds enabled"
+    SAVE_AWS_CREDS="--save-aws-creds ${SAVE_AWS_CREDS}"
+fi
+
 # Loop forever, sleeping for our frequency
 while true
 do
     echo "Awoke to check for new credentials with prefix ${PARAM_PREFIX} in AWS Parameter Store"
 
-    python /parameter_sync.py --credentials-path ${CRED_FOLDER_PATH} --param-prefix ${PARAM_PREFIX} --aws-region ${AWS_REGION} ${VERBOSE}
+    python /parameter_sync.py --credentials-path ${CRED_FOLDER_PATH} --param-prefix ${PARAM_PREFIX} --aws-region ${AWS_REGION} ${SAVE_AWS_CREDS} ${VERBOSE}
     echo "Sleeping for $FREQUENCY seconds"
     sleep $FREQUENCY
     echo
