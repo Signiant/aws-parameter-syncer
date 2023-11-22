@@ -130,9 +130,8 @@ def process_parameters_with_prefix(param_prefix, cred_path, aws_region, aws_acce
             process_parameter(parameter_name, parameter_value)
 
 
-def write_aws_cli_creds(key_id, secret, file_location, cred_filename, profile_name, aws_region):
+def create_aws_cred_file(key_id, secret, file_location, cred_filename, profile_name, aws_region):
     file_path = f'{file_location}{os.sep}{cred_filename}'
-    logger.info(f'Attempting to save AWS Credentials to {file_path} with profile name {p}')
     if os.path.exists(file_path):
         # File already exists - append to it
         with open(file_path, 'a') as cred_file:
@@ -149,7 +148,58 @@ def write_aws_cli_creds(key_id, secret, file_location, cred_filename, profile_na
                 cred_file.write(f'region={aws_region}\n')
             cred_file.write(f'aws_access_key_id={key_id}\n')
             cred_file.write(f'aws_secret_access_key={secret}\n')
-    return True
+    return file_path
+
+
+def write_aws_cli_creds(key_id, secret, base_cred_path, aws_cred_list):
+    aws_creds_tuples = []
+    have_all_info = False
+    for i, val in enumerate(aws_cred_list):
+        if (i % 3) == 0:
+            logging.debug(f'save-aws-creds - filename: {val}')
+            filename = val
+        elif (i % 3) == 1:
+            logging.debug(f'save-aws-creds - profile name: {val}')
+            if '#' in val:
+                profile = val.replace('#', ' ')
+            else:
+                profile = val
+        else:
+            logging.debug(f'save-aws-creds - region: {val}')
+            if 'none' in val.lower():
+                region = None
+            else:
+                region = val
+            have_all_info = True
+
+        if have_all_info:
+            aws_creds_tuples.append((filename, profile, region))
+            have_all_info = False
+
+    if len(aws_creds_tuples) > 0:
+        logging.debug('Provided with the following tuples:')
+        logging.debug(f'{aws_creds_tuples}')
+
+        # write to a tmp file first
+        temp_dir = tempfile.gettempdir()
+        if not os.path.exists(temp_dir):
+            os.makedirs(temp_dir)
+
+        aws_cred_files = []
+        for f, p, r in aws_creds_tuples:
+            tmp_cred_filepath = create_aws_cred_file(key_id, secret, temp_dir, f, p, r)
+            if tmp_cred_filepath not in aws_cred_files:
+                aws_cred_files.append(tmp_cred_filepath)
+
+        # Now copy the tmp files to the base_cred_path
+        for cred_file in aws_cred_files:
+            filename = cred_file.split(os.sep)[-1]
+            new_file_path = f"{base_cred_path}{os.sep}{filename}"
+            logger.info(f'Saving AWS Credentials to {new_file_path}')
+            shutil.copyfile(cred_file, new_file_path)
+            # Cleanup
+            logger.debug(f'Removing {cred_file}')
+            os.remove(cred_file)
 
 
 if __name__ == "__main__":
@@ -203,37 +253,6 @@ if __name__ == "__main__":
             logging.critical('Must provide filename, profile_name and region for aws creds')
             sys.exit(1)
 
-        aws_creds_tuples = []
-        have_all_info = False
-        for i, val in enumerate(args.save_aws_creds):
-            if (i % 3) == 0:
-                logging.debug(f'save-aws-creds - filename: {val}')
-                filename = val
-            elif (i % 3) == 1:
-                logging.debug(f'save-aws-creds - profile name: {val}')
-                if '#' in val:
-                    profile = val.replace('#', ' ')
-                else:
-                    profile = val
-            else:
-                logging.debug(f'save-aws-creds - region: {val}')
-                if 'none' in val.lower():
-                    region = None
-                else:
-                    region = val
-                have_all_info = True
-
-            if have_all_info:
-                aws_creds_tuples.append((filename, profile, region))
-                have_all_info = False
-
-        if len(aws_creds_tuples) > 0:
-            logging.debug('Provided with the following tuples:')
-            logging.debug(f'{aws_creds_tuples}')
-
-            for f, p, r in aws_creds_tuples:
-                result = write_aws_cli_creds(aws_access_key, aws_secret_key, args.cred_path, f, p, r)
-                if not result:
-                    logger.critical(f'Failed to write AWS Creds to {args.cred_path}')
+        result = write_aws_cli_creds(aws_access_key, aws_secret_key, args.cred_path, args.save_aws_creds)
 
     logger.info('COMPLETE')

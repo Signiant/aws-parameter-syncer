@@ -30,7 +30,8 @@ This example checks AWS Parameter Store in the default us-east-1 region every 60
 for parameters containing 'TESTING_'. The credentials in AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY are
 used to access the AWS Parameter Store. The parameter values will be checked against files in the local
 folder 'credentials-dir' which is mounted into the container at '/credentials'. The credentials used to access
-the AWS Parameter Store will be saved to /credentials/aws_cli_credentials file with a profile name of 'default'.
+the AWS Parameter Store will be saved to /credentials/aws_cli_credentials file with a profile name of 'default'
+and no (default) region specified.
 
 
 ````
@@ -39,7 +40,7 @@ docker run -d -e "FREQUENCY=600" \
  -e "AWS_ACCESS_KEY_ID=MY_ACCESS_KEY_ID" \
  -e "AWS_SECRET_ACCESS_KEY=MY_SECRET_KEY" \
  -e "PARAM_PREFIX=TESTING_" \
- -e "SAVE_AWS_CREDS="aws_cli_credentials default" \
+ -e "SAVE_AWS_CREDS="aws_cli_credentials default None" \
  -v credentials-dir:/credentials \
  signiant/aws-parameter-syncer
 ````

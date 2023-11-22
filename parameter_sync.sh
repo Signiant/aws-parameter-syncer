@@ -46,7 +46,6 @@ fi
 
 if [ "$SAVE_AWS_CREDS" ]; then
     echo "Save AWS Creds enabled"
-    set -x
     SAVE_AWS_CREDS="--save-aws-creds ${SAVE_AWS_CREDS}"
 fi
 
