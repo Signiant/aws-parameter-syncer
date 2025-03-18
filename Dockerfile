@@ -1,6 +1,4 @@
-FROM python:3.8-slim
-
-MAINTAINER Signiant DevOps <devops@signiant.com>
+FROM python:3-slim
 
 RUN mkdir -p /credentials
 

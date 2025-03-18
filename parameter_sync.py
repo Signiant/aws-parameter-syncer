@@ -3,9 +3,10 @@ import hashlib
 import logging
 import os
 import shutil
-import tempfile
-import boto3
 import sys
+import tempfile
+
+import boto3
 
 #setup logging
 FORMAT = '%(asctime)-15s [%(levelname)s] %(message)s'
@@ -253,6 +254,6 @@ if __name__ == "__main__":
             logging.critical('Must provide filename, profile_name and region for aws creds')
             sys.exit(1)
 
-        result = write_aws_cli_creds(aws_access_key, aws_secret_key, args.cred_path, args.save_aws_creds)
+        write_aws_cli_creds(aws_access_key, aws_secret_key, args.cred_path, args.save_aws_creds)
 
     logger.info('COMPLETE')
